@@ -2,7 +2,7 @@
 // variant 23
 int main () {
   matrix_t A, B, X;
-  double eps = 0.00001;
+  double eps = 0.01;
   int iter = 0;
 
   s21_create_matrix(4, 4, &A);

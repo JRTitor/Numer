@@ -43,3 +43,6 @@ void seidel(matrix_t *A, matrix_t *B, double eps, matrix_t *res, int *iter);
 void rotate(matrix_t *A, matrix_t *eigenvalue_vec, matrix_t *eigenvalue, double eps, int *iter);
 void household(matrix_t *A, matrix_t *Q, matrix_t *R);
 void eigenvalue(matrix_t *A, matrix_t *eigenvalue,double eps, int *iter);
+void Solve_compact(matrix_t *A, matrix_t *B, matrix_t *X);
+double det_(matrix_t *A);
+void Inverse_c(matrix_t *A, matrix_t *res);

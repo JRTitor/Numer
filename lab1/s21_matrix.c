@@ -255,6 +255,42 @@ void LU (matrix_t* A, matrix_t* L, matrix_t* U) {
     }
   }
 }
+void switch_lines(matrix_t *LU, int i, int s) {
+  double tmp = 0;
+  for (int j = 0; j < LU->columns; j++) {
+    tmp = LU->matrix[i][j];
+    LU->matrix[i][j] = LU->matrix[s][j];
+    LU->matrix[s][j] = tmp;
+  }
+}
+void LU_compact(matrix_t* A, matrix_t* LU) {
+  if (A->rows != A->columns) {
+    printf("\nMATRIX IS NOT SQUARE\n");
+    return;
+  }
+  int n = A->rows;
+  s21_create_matrix(n, n, LU);
+  s21_copy_without_lines(-1, -1, A, LU);
+  for (int i = 0; i < n - 1; i++) {
+    int tmp = i + 1;
+    while (LU->matrix[i][i] == 0) {
+      if (tmp == n) {
+        printf("LU is not supported for this matrix");
+        return;
+      } 
+      switch_lines(LU, i, tmp);
+      tmp++;
+    }
+    double coff;
+    for (int j = i + 1; j < n; j++) {
+      coff = -1. * LU->matrix[j][i] / LU->matrix[i][i];
+      LU->matrix[j][i] = -1. * coff;
+      for (int k = i + 1; k < n; k++) {
+        LU->matrix[j][k] = LU->matrix[j][k] + coff * LU->matrix[i][k];
+      }
+    }
+  }
+}
 
 void Print_mat(matrix_t* A) {
   for (int i = 0; i < A->rows; i++) {
@@ -301,10 +337,44 @@ void Solve(matrix_t *A, matrix_t *B, matrix_t *X) {
   s21_remove_matrix(&L);
   s21_remove_matrix(&U);
 }
+void Solve_compact(matrix_t *A, matrix_t *B, matrix_t *X) {
+  matrix_t tmp;
+  s21_create_matrix(B->rows, B->columns, &tmp);
+  s21_create_matrix(B->rows, B->columns, X);
+  int n = A->columns;
+
+  for (int i = 0; i < n; i++) {
+    tmp.matrix[0][i] = 0;
+    X->matrix[0][i] = 0;
+  }
+  matrix_t LU;
+  LU_compact(A, &LU);
+
+  for (int i = 0; i < n; ++i) {
+    double s = 0;
+    for (int j = 0; j < i; ++j) {
+      if (i == j) continue;
+      s += tmp.matrix[0][j] * LU.matrix[i][j];
+    }
+    tmp.matrix[0][i] = B->matrix[0][i] - s;
+  }
+  
+  for (int i = n - 1; i >= 0; --i) {
+    double s = tmp.matrix[0][i];
+    for (int j = n - 1; j >= i; --j) {
+      if (i == j) continue;
+      s -=   LU.matrix[i][j] * X->matrix[0][j];
+    }
+    X->matrix[0][i] = s / LU.matrix[i][i];
+  }
+
+  s21_remove_matrix(&tmp);
+  s21_remove_matrix(&LU);
+}
 
 double det(matrix_t *A) {
   matrix_t L, U;
-  double det = 1;
+  double det = 1.;
   LU(A, &L, &U);
   for (int i = 0; i < A->rows; ++i) {
     det *= U.matrix[i][i];
@@ -315,8 +385,23 @@ double det(matrix_t *A) {
   return det;
 }
 
+double det_(matrix_t *A) {
+  matrix_t LU;
+  double det = 1.;
+  LU_compact(A, &LU);
+  for (int i = 0; i < A->rows; ++i) {
+    det *= LU.matrix[i][i];
+  }
+  s21_remove_matrix(&LU);
+  return det;
+}
+
 
 void Inverse(matrix_t *A, matrix_t *res) {
+  if (A->rows != A->columns) {
+    printf("\nMATRIX IS NOT SQUARE\n");
+    return;
+  }
   matrix_t inv, I, tmp, L, U;
   int n = A->rows;
   s21_create_matrix(A->rows, A->columns, &tmp);
@@ -337,7 +422,7 @@ void Inverse(matrix_t *A, matrix_t *res) {
       for (int k = 0; k < j; ++k) {
         s += tmp.matrix[k][i] * L.matrix[j][k];
       }
-      tmp.matrix[j][i] = (I.matrix[j][i] - s) / L.matrix[j][j];
+      tmp.matrix[j][i] = (I.matrix[j][i] - s);
     }
   } 
   for (int i = 0; i < n; ++i) {
@@ -359,7 +444,74 @@ void Inverse(matrix_t *A, matrix_t *res) {
   s21_remove_matrix(&U);
 }
 
+void fill_zero(matrix_t *A) {
+  for (int i = 0;  i < A->rows; i++) {
+    for (int j = 0;  j < A->rows; j++) {
+      A->matrix[i][j] = 0.;
+    }
+  }
+}
+
+void Inverse_c(matrix_t *A, matrix_t *res) {
+  if (A->rows != A->columns) {
+    printf("\nMATRIX IS NOT SQUARE\n");
+    return;
+  }
+
+  matrix_t x1, res1;
+  s21_create_matrix(A->rows, A->columns, res);
+  s21_create_matrix(1, A->columns, &x1);
+  fill_zero(&x1);
+  for (int i = 0;  i < A->rows; i++) {
+    if (i > 0)
+      x1.matrix[0][i - 1] = 0.;
+    x1.matrix[0][i] = 1.;
+    Solve_compact(A, &x1, &res1);
+    for (int j = 0;  j < A->rows; j++) {
+      res->matrix[j][i] = res1.matrix[0][j];
+    }
+    s21_remove_matrix(&res1);
+  }
+  s21_remove_matrix(&x1);
+}
+
+void is_tridiagonal(matrix_t *A) {
+
+  for (int i = 0; i < A->rows; i++) {
+    for (int j = 0; j < A->columns; j++) {
+      if (i == j || i == j - 1 || i == j + 1) {
+        if (A->matrix[i][j] == 0) {
+          printf("\nMatrix is not tridiagonal\n");
+          return;
+        }
+      } else if (A->matrix[i][j] != 0) {
+        printf("\nMatrix is not tridiagonal\n");
+        return;
+      }
+    }
+  }
+}
+
+void stable_qr(matrix_t *A) {
+  int n = A->rows;
+  int flag = 0;
+  for (int i = 0; i < n - 1; i++) {
+    if ((i > 0) && (i < (n - 1)) && (A->matrix[i][0] == 0 || A->matrix[i][1] == 0 || A->matrix[i][2] == 0)) {
+      printf("\nUNSTABLE\n");
+      return;
+    }
+    if (fabs(A->matrix[i][1]) < fabs(A->matrix[i][0]) + fabs(A->matrix[i][2])) {
+      printf("\nUNSTABLE\n");
+      return;
+    } if (fabs(A->matrix[i][1]) > fabs(A->matrix[i][0]) + fabs(A->matrix[i][2])) { flag++;}
+  }
+  if (!flag) {
+    printf("\nUNSTABLE\n");
+  }
+}
+
 void QP(matrix_t *A, matrix_t *B, matrix_t *X) {
+  stable_qr(A);
   matrix_t Q, P;
   int n = A->rows;
   s21_create_matrix(1, n, &Q);
@@ -399,7 +551,7 @@ void noralize(matrix_t *A, matrix_t *B, matrix_t *a, matrix_t *b) {
   }
 }
 
-double norm(matrix_t *A) {
+double norm(matrix_t *A ) {
   double s = 0;
   for (int i = 0; i < A->rows; i++) {
     for (int j = 0; j < A->columns; j++) {
@@ -407,6 +559,19 @@ double norm(matrix_t *A) {
     }
   }
   return sqrt(s);
+}
+
+void norm_m(matrix_t *A) {
+  double m = -1.;
+  for (int i = 0; i < A->rows; i++) {
+    double tmp = 0;
+    for (int j = 0; j < A->columns; j++) {
+      tmp += fabs(A->matrix[i][j]);
+      m = (m < tmp) ? tmp : m; 
+    }
+  }
+  if (m < 1)  printf("\nmethod converges\n");
+  else  printf("\nmethod dont converges\n");
 }
 
 void iteration(matrix_t *A, matrix_t *B, double eps, matrix_t *res, int *iter) {
@@ -422,6 +587,7 @@ void iteration(matrix_t *A, matrix_t *B, double eps, matrix_t *res, int *iter) {
   s21_create_matrix(A->rows, 1, res);
 
   noralize(A, B, &a, &b);
+  norm_m(&a);
   s21_copy_without_lines(-1, -1, &b, &X);
   *iter = 0;
   for (double error = 10. * eps; error > eps; (*iter)++) {
@@ -430,7 +596,7 @@ void iteration(matrix_t *A, matrix_t *B, double eps, matrix_t *res, int *iter) {
     s21_sum_matrix(&tmp, &b, res);
     s21_remove_matrix(&tmp);
 
-    error = 0;
+
     s21_sub_matrix(res, &X, &tmp);
     error = norm(&tmp);
     s21_remove_matrix(&tmp);
@@ -442,6 +608,7 @@ void iteration(matrix_t *A, matrix_t *B, double eps, matrix_t *res, int *iter) {
   s21_remove_matrix(&b);
   s21_remove_matrix(&X);
 }
+
 
 void noralize_seidel(matrix_t *a, matrix_t *BB, matrix_t *CC) {
   for (int i = 0; i < a->rows; ++i) {
@@ -469,6 +636,7 @@ void seidel(matrix_t *A, matrix_t *B, double eps, matrix_t *res, int *iter) {
   s21_create_matrix(A->rows, 1, res);
 
   noralize(A, B, &a, &b);
+  norm_m(&a);
   Identity(&I);
   noralize_seidel(&a, &BB, &CC);
   s21_copy_without_lines(-1, -1, &b, &X);
@@ -696,4 +864,5 @@ void eigenvalue(matrix_t *A, matrix_t *eigenvalue, double eps, int *iter) {
   }
   s21_remove_matrix(&A_tmp);
 }
+
 

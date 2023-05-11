@@ -51,31 +51,24 @@ lab1_3: clean s21_matrix.a
 	@echo
 	@echo
 	@echo "lab1_3"
-	gcc -Werror -Wextra -Wall -std=c11 lab1_2.c -lm -L. -l:s21_matrix.a -o 3.out
+	gcc -Werror -Wextra -Wall -std=c11 lab1_3.c -lm -L. -l:s21_matrix.a -o 3.out
 	./3.out
 
 lab1_4: clean s21_matrix.a
 	@echo
 	@echo
 	@echo "lab1_4"
-	gcc -Werror -Wextra -Wall -std=c11 lab1_2.c -lm -L. -l:s21_matrix.a -o 4.out
+	gcc -Werror -Wextra -Wall -std=c11 lab1_4.c -lm -L. -l:s21_matrix.a -o 4.out
 	./4.out
 
 lab1_5: clean s21_matrix.a
 	@echo
 	@echo
 	@echo "lab1_5"
-	gcc -Werror -Wextra -Wall -std=c11 lab1_2.c -lm -L. -l:s21_matrix.a -o 5.out
+	gcc -Werror -Wextra -Wall -std=c11 lab1_5.c -lm -L. -l:s21_matrix.a -o 5.out
 	./5.out
 
 
 clean : 
 		rm -rf s21_matrix.a *.o *.a *.gcno  *.gcda *.info report.out *.gcov  s21_test s21_report *.out RES* 
 
-style:
-	cp ../materials/linters/.clang-format .
-	cp ../materials/linters/.clang-format test
-	clang-format -n *.c *.h
-	clang-format -i *.c *.h
-	clang-format -n *.c *.h
-	rm .clang-format test

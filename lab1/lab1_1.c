@@ -36,20 +36,20 @@ int main() {
   printf("B^T:\n");
   Print_mat(&B);
 
-
-  printf("det(A) = %g\n",det(&A));
+  printf("det(A) = %g\n",det_(&A));
   
   printf("X^T = \n");
-  Solve(&A, &B, &X);
+  Solve_compact(&A, &B, &X);
   Print_mat(&X);
   s21_remove_matrix(&X);
 
   printf("A^(-1):\n");
-  Inverse(&A, &X);
+  Inverse_c(&A, &X);
   Print_mat(&X);
   s21_remove_matrix(&X);
 
   s21_remove_matrix(&B);
   s21_remove_matrix(&A);
+  
 }
 
