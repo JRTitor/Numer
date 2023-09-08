@@ -142,79 +142,8 @@ void s21_copy_without_lines(int a, int b, matrix_t *A, matrix_t *tmp) {
     if (l != 0) k++;
   }
 }
-int s21_determinant(matrix_t *A, double *result) {
-  int res = OK;
-  if (incorrect(A)) {
-    res = INCORRECT;
-  } else if (A->rows != A->columns) {
-    res = UNABLE;
-  } else {
-    if (A->rows == 1) {
-      *result = A->matrix[0][0];
 
-    } else {
-      double det = 0.;
-      double one = 1.;
-      for (int i = 0; i < A->columns; i++) {
-        double tmp_det = 0.;
-        if (A->rows > 1.) {
-          matrix_t tmp;
-          s21_create_matrix(A->rows - 1, A->columns - 1, &tmp);
-          s21_copy_without_lines(0, i, A, &tmp);
-          s21_determinant(&tmp, &tmp_det);
-          det += A->matrix[0][i] * one * tmp_det;
-          s21_remove_matrix(&tmp);
-        } else {
-          det += A->matrix[0][i] * one;
-        }
-        one = -one;
-      }
-      *result = det;
-    }
-  }
-  return res;
-}
 
-int s21_calc_complements(matrix_t *A, matrix_t *result) {
-  int res = OK;
-  if (incorrect(A)) {
-    res = INCORRECT;
-  } else {
-    s21_create_matrix(A->rows, A->columns, result);
-    matrix_t tmp;
-    double det;
-
-    for (int i = 0; i < A->rows; i++) {
-      for (int j = 0; j < A->columns; j++) {
-        s21_create_matrix(A->rows - 1, A->columns - 1, &tmp);
-        s21_copy_without_lines(i, j, A, &tmp);
-        s21_determinant(&tmp, &det);
-        result->matrix[i][j] = det * pow(-1, i + j);
-        s21_remove_matrix(&tmp);
-      }
-    }
-  }
-  return res;
-}
-
-int s21_inverse_matrix(matrix_t *A, matrix_t *result) {
-  int res = OK;
-  double det = 0;
-  s21_determinant(A, &det);
-  if (incorrect(A)) {
-    res = INCORRECT;
-  } else if (det == 0) {
-    res = UNABLE;
-  } else {
-    s21_calc_complements(A, result);
-    matrix_t tmp;
-    s21_transpose(result, &tmp);
-    s21_remove_matrix(result);
-    s21_mult_number(&tmp, 1 / det, result);
-    s21_remove_matrix(&tmp);
-  }
-  return res;
-}
 
 void Identity(matrix_t *A) {
   for (int i = 0; i < A->rows; i++) {
@@ -224,37 +153,6 @@ void Identity(matrix_t *A) {
   }
 }
 
-void LU (matrix_t* A, matrix_t* L, matrix_t* U) {
-  if (A->rows != A->columns) {
-    printf("\nMATRIX IS NOT SQUARE\n");
-    return;
-  }
-  s21_create_matrix(A->rows, A->columns, L);
-  s21_create_matrix(A->rows, A->columns, U);
-  s21_copy_without_lines(-1, -1, A, U);
-  Identity(L);
-
-  int n = A->rows;
-
-  for (int i = 0; i < n; i++) {
-    for (int j = i; j < n; j++) {
-      L->matrix[j][i] = U->matrix[j][i] / U->matrix[i][i];
-    }
-  }
-
-  for (int k = 1; k < n; k++) {
-    for (int i = k - 1; i < n; i++) {
-      for (int j = i; j < n; j++) {
-        L->matrix[j][i] = U->matrix[j][i] / U->matrix[i][i];
-      }
-    }
-    for (int i = k; i < n; i++) {
-      for (int j = k - 1; j < n; j++) {
-        U->matrix[i][j] = U->matrix[i][j] - L->matrix[i][k-1] * U->matrix[k - 1][j];
-      }
-    }
-  }
-}
 void switch_lines(matrix_t *LU, int i, int s) {
   double tmp = 0;
   for (int j = 0; j < LU->columns; j++) {
@@ -262,6 +160,20 @@ void switch_lines(matrix_t *LU, int i, int s) {
     LU->matrix[i][j] = LU->matrix[s][j];
     LU->matrix[s][j] = tmp;
   }
+}
+void check_LU(matrix_t* A) {
+  for (int i = 0; i < n - 1; i++) {
+    int tmp = i + 1;
+    while (A->matrix[i][i] == 0) {
+      if (tmp == n) {
+        printf("LU is not supported for this matrix");
+        return 0;
+      } 
+      switch_lines(A, i, tmp);
+      tmp++;
+    }
+  }
+  return 1;
 }
 void LU_compact(matrix_t* A, matrix_t* LU) {
   if (A->rows != A->columns) {
