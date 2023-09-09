@@ -161,7 +161,8 @@ void switch_lines(matrix_t *LU, int i, int s) {
     LU->matrix[s][j] = tmp;
   }
 }
-void check_LU(matrix_t* A) {
+int check_LU(matrix_t* A) {
+  int n = A->rows;
   for (int i = 0; i < n - 1; i++) {
     int tmp = i + 1;
     while (A->matrix[i][i] == 0) {
@@ -204,7 +205,52 @@ void LU_compact(matrix_t* A, matrix_t* LU) {
   }
 }
 
-void Print_mat(matrix_t* A) {
+void LU(matrix_t *A, matrix_t *LU, int show_lu) {
+  if (A->rows != A->columns) {
+    printf("\nMATRIX IS NOT SQUARE\n");
+    return;
+  }
+  if (!check_LU(A)) {
+    _Exit(0);
+  }
+
+  int n = A->columns;
+  double mu = 0;
+  matrix_t M, M2, tmp_A, tmp_A2, tmp_LU;
+  s21_create_matrix(n, n, LU);
+  s21_create_matrix(n, n, &tmp_A);
+
+  s21_copy_without_lines(-1, -1, A, &tmp_A);
+  Identity(LU);
+  s21_create_matrix(n, n, &M);
+  s21_create_matrix(n, n, &M2);
+  Identity(&M);
+  Identity(&M2);
+
+  for (int i = 0; i < n; i++) {
+    Identity(&M);
+    Identity(&M2);
+    for(int j = i + 1; j < n; j++) {
+      mu = tmp_A.matrix[j][i] / tmp_A.matrix[i][i];
+      M.matrix[j][i] = -mu;
+      M2.matrix[j][i] = mu;
+    }
+    
+    s21_mult_matrix(&M, &tmp_A, &tmp_A2);
+    s21_copy_without_lines(-1, -1, &tmp_A2, &tmp_A);
+    s21_remove_matrix(&tmp_A2);
+
+    s21_mult_matrix(LU, &M2, &tmp_LU);
+    s21_copy_without_lines(-1, -1, &tmp_LU, LU);
+    s21_remove_matrix(&tmp_LU);
+  }
+
+  if (show_lu) {
+    Print_mat(LU);
+  }
+}
+
+void Print_mat(matrix_t *A) {
   for (int i = 0; i < A->rows; i++) {
     for (int j = 0; j < A->columns; j++) {
       if (j != 0) printf(" ");
@@ -214,41 +260,81 @@ void Print_mat(matrix_t* A) {
   }
 }
 
-void Solve(matrix_t *A, matrix_t *B, matrix_t *X) {
-  matrix_t tmp;
-  s21_create_matrix(B->rows, B->columns, &tmp);
+void forward_sub(matrix_t *L, matrix_t *B, matrix_t *X) {
+  int n = L->columns;
+  double tmp = 0;
   s21_create_matrix(B->rows, B->columns, X);
-  int n = A->columns;
 
   for (int i = 0; i < n; i++) {
-    tmp.matrix[0][i] = 0;
-    X->matrix[0][i] = 0;
-  }
-  matrix_t L, U;
-  LU(A, &L, &U);
-
-  for (int i = 0; i < n; ++i) {
-    double s = 0;
-    for (int j = 0; j < i; ++j) {
-      if (i == j) continue;
-      s += tmp.matrix[0][j] * L.matrix[i][j];
+    tmp = B->matrix[0][i];
+    for (int j = 0; j < i - 1; j++) {
+      tmp -= L->matrix[i][j] * X->matrix[0][j];
     }
-    tmp.matrix[0][i] = B->matrix[0][i] - s;
+    X->matrix[0][i] = tmp / L->matrix[i][i];
   }
-  
-  for (int i = n - 1; i >= 0; --i) {
-    double s = tmp.matrix[0][i];
-    for (int j = n - 1; j >= i; --j) {
-      if (i == j) continue;
-      s -=   U.matrix[i][j] * X->matrix[0][j];
-    }
-    X->matrix[0][i] = s / U.matrix[i][i];
-  }
-
-  s21_remove_matrix(&tmp);
-  s21_remove_matrix(&L);
-  s21_remove_matrix(&U);
 }
+
+void backward_sub(matrix_t *U, matrix_t *B, matrix_t *X) {
+  int n = U->columns;
+  double tmp = 0;
+  s21_create_matrix(B->rows, B->columns, X);
+
+  for (int i = n - 1; i > -1; i--) {
+    tmp = B->matrix[0][i];
+    for (int j = i+1; j < n; j++) {
+      tmp -= U->matrix[i][j] * X->matrix[0][j];
+    }
+    X->matrix[0][i] = tmp / U->matrix[i][i];
+  }
+}
+
+void Solve(matrix_t *A, matrix_t *B, matrix_t *X, int show_lu) {
+  matrix_t tmp;
+  matrix_t LU_m;
+  LU(A, &LU_m, show_lu);
+  forward_sub(&LU_m, B, &tmp);
+  backward_sub(&LU_m, &tmp, X);
+  s21_remove_matrix(&tmp);
+  s21_remove_matrix(&LU_m);
+
+}
+
+
+// void Solve(matrix_t *A, matrix_t *B, matrix_t *X, int show_lu) {
+//   matrix_t tmp;
+//   s21_create_matrix(B->rows, B->columns, &tmp);
+//   s21_create_matrix(B->rows, B->columns, X);
+//   int n = A->columns;
+
+//   for (int i = 0; i < n; i++) {
+//     tmp.matrix[0][i] = 0;
+//     X->matrix[0][i] = 0;
+//   }
+//   matrix_t LU;
+//   void LU (matrix_t* A, matrix_t* L, matrix_t* U);(A, &L, &U);
+
+//   for (int i = 0; i < n; ++i) {
+//     double s = 0;
+//     for (int j = 0; j < i; ++j) {
+//       if (i == j) continue;
+//       s += tmp.matrix[0][j] * L.matrix[i][j];
+//     }
+//     tmp.matrix[0][i] = B->matrix[0][i] - s;
+//   }
+  
+//   for (int i = n - 1; i >= 0; --i) {
+//     double s = tmp.matrix[0][i];
+//     for (int j = n - 1; j >= i; --j) {
+//       if (i == j) continue;
+//       s -=   U.matrix[i][j] * X->matrix[0][j];
+//     }
+//     X->matrix[0][i] = s / U.matrix[i][i];
+//   }
+
+//   s21_remove_matrix(&tmp);
+//   s21_remove_matrix(&L);
+//   s21_remove_matrix(&U);
+// }
 void Solve_compact(matrix_t *A, matrix_t *B, matrix_t *X) {
   matrix_t tmp;
   s21_create_matrix(B->rows, B->columns, &tmp);
