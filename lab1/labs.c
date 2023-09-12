@@ -13,7 +13,7 @@ int defaul_or_input() {
     int choice = 0;
     while (stop) {
         printf("Введите 1 для демонстации лаботаторной работы с дефолтными параметрами \nВведите 2 для ввода данных\n");
-        if (scanf("%d", &choice) == 1 && choice == 1 || choice == 2) {
+        if (scanf("%d", &choice) == 1 && (choice == 1 || choice == 2)) {
             break;
         }
         printf("Вам требуется ввести 1 или 2 \n");
@@ -94,15 +94,15 @@ void lab1_input() {
     printf("B^T:\n");
     Print_mat(&B);
 
-    printf("det(A) = %g\n",det_(&A));
+    printf("det(A) = %lf\n",det(&A, 0));
     
     printf("X^T = \n");
-    Solve_compact(&A, &B, &X); // fix
+    Solve(&A, &B, &X, 0);
     Print_mat(&X);
     s21_remove_matrix(&X);
 
     printf("A^(-1):\n");
-    Inverse_c(&A, &X);
+    Inverse(&A, &X, 0);
     Print_mat(&X);
     s21_remove_matrix(&X);
 
@@ -144,15 +144,15 @@ void lab1_default() {
     printf("B^T:\n");
     Print_mat(&B);
 
-    printf("det(A) = %g\n",det_(&A));
+    printf("det(A) = %lf\n",det(&A, 0));
     
     printf("X^T = \n");
-    Solve_compact(&A, &B, &X); // fix
+    Solve(&A, &B, &X, 1);
     Print_mat(&X);
     s21_remove_matrix(&X);
 
     printf("A^(-1):\n");
-    Inverse_c(&A, &X);
+    Inverse(&A, &X, 0);
     Print_mat(&X);
     s21_remove_matrix(&X);
 
@@ -296,7 +296,7 @@ void lab3_default() {
     Print_mat(&A);
     printf("B:\n");
     Print_mat(&B);
-    printf("eps = %g\n", eps);
+    printf("eps = %lf\n", eps);
 
     printf("Метод инетраций:\n");
     iteration(&A, &B, eps, &X, &iter);
@@ -320,11 +320,10 @@ void lab3_input() {
     matrix_t A, B, X;
     double eps = 0.01;
     int iter = 0;
-    int stop = 1;
 
-    while (stop) {
+    while (1) {
         printf("Введите eps");
-        while (scanf(&eps) != 1 || eps < 0) {
+        while (scanf("%lf", &eps) != 1 || eps < 0) {
             printf("eps не некорректен, возможно отрицателен попробуйте снова, желательно сделать его меньше 1");
         }
         
@@ -345,7 +344,7 @@ void lab3_input() {
     Print_mat(&A);
     printf("B:\n");
     Print_mat(&B);
-    printf("eps = %g\n", eps);
+    printf("eps = %lf\n", eps);
 
     printf("Метод инетраций:\n");
     iteration(&A, &B, eps, &X, &iter);
@@ -396,7 +395,7 @@ void lab4_default() {
     A.matrix[2][2] = -3.;
     printf("matrix A:\n");
     Print_mat(&A);
-    printf("eps = %g\n", eps);
+    printf("eps = %lf\n", eps);
     rotate(&A, &euginvalue_vec, &euginvalues ,eps, &iter);
     printf("iterations: %d\n", iter);
     printf("euginvalues\n");
@@ -412,10 +411,9 @@ void lab4_input() {
     matrix_t A, euginvalues, euginvalue_vec;
     double eps = 0.1;
     int iter = 0;
-    int stop = 1;
 
     printf("Введите eps");
-    while (scanf(&eps) != 1 || eps < 0) {
+    while (scanf("%lf", &eps) != 1 || eps < 0) {
         printf("eps не некорректен, возможно отрицателен попробуйте снова, желательно сделать его меньше 1");
     }
         
@@ -448,7 +446,6 @@ void lab5() {
     if (choice == 2) {
         lab5_input();
     }
-
 }
 
 void lab5_input() {
@@ -458,7 +455,7 @@ void lab5_input() {
 
 
     printf("Введите eps");
-    while (scanf(&eps) != 1 || eps < 0) {
+    while (scanf("%lf",&eps) != 1 || eps < 0) {
         printf("eps не некорректен, возможно отрицателен попробуйте снова, желательно сделать его меньше 1");
     }
         
@@ -481,7 +478,8 @@ void lab5_input() {
 void lab5_default() {
     double eps = 0.01;
     matrix_t A, eigenvalues;
-    int iter = 0;    s21_create_matrix(3, 3, &A);
+    int iter = 0;
+    s21_create_matrix(3, 3, &A);
     A.matrix[0][0] = 1.;
     A.matrix[0][1] = 5.;
     A.matrix[0][2] = -6.;
