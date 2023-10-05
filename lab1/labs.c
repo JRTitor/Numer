@@ -15,8 +15,10 @@ int defaul_or_input() {
         printf("Введите 1 для демонстации лаботаторной работы с дефолтными параметрами \nВведите 2 для ввода данных\n");
         if (scanf("%d", &choice) == 1 && (choice == 1 || choice == 2)) {
             break;
+        } else {
+            printf("Вам требуется ввести 1 или 2 \n");
         }
-        printf("Вам требуется ввести 1 или 2 \n");
+        
     }
     return choice;
 }
@@ -147,7 +149,7 @@ void lab1_default() {
     printf("det(A) = %lf\n",det(&A, 0));
     
     printf("X^T = \n");
-    Solve(&A, &B, &X, 1);
+    Solve(&A, &B, &X, 0);
     Print_mat(&X);
     s21_remove_matrix(&X);
 

@@ -7,8 +7,6 @@ S21_MAT_O = s21_*.o
 OS = $(shell uname -s)
 LINUX = -lcheck -lm -lrt -lpthread -lsubunit
 
-all : clean lab1_1 lab1_2 lab1_3 lab1_4 lab1_5
-
 s21_matrix.o:  s21_matrix.h
 		$(CC) $(FLAGS) -c $(S21_MAT_C)
 
@@ -21,13 +19,9 @@ s21_matrix.a: s21_matrix.o
 s21_matrix.a_cov: s21_matrix.cov
 		ar rcs s21_matrix.a $(S21_MAT_O)
 
-menu: labs
-	$(CC) -Werror -Wextra -Wall -std=c11 -c menu -o menu.o
-	$(CC) -Werror -Wextra -Wall -std=c11 labs.o menu.o -o interface
+menu: s21_matrix.a
+	$(CC) -Werror -Wextra -Wall -std=c11 labs.c menu.c -lm -L. -l:s21_matrix.a -o interface
 	./interface
-
-labs: s21_matrix.a
-	$(CC) -Werror -Wextra -Wall -std=c11 -c labs.c -lm -L. -l:s21_matrix.a -o labs.o
 
 
 test: s21_matrix.a_cov suit_test.c

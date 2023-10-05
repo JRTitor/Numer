@@ -4,9 +4,6 @@
 
 int main() {
   matrix_t A, B, X;
- ///  Добавить ввод через файл, так всё говно 
- // это не LU сасать  
- //  
   s21_create_matrix(4, 4, &A);
   A.matrix[0][0] = 2;
   A.matrix[0][1] = -7;
