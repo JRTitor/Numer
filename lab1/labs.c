@@ -517,3 +517,5 @@ void lab5_default() {
     s21_remove_matrix(&A);
     s21_remove_matrix(&eigenvalues);
 }
+
+
